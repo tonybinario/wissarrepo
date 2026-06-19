@@ -16,13 +16,9 @@ router.get('/', async function (req, res, next) {
 /* 2. POST: Neuen User anlegen */
 router.post('/', async (req, res) => { // Hier stand vorher 'post', jetzt 'router.post'
     try {
-        const {email} = req.body;
-        if (!email) {
-            return res.status(400).json({error: 'E-Mail ist erforderlich'});
-        }
-
+        console.log('1. Daten in der Route angekommen:', req.body); // <-- HIER
         // Ruft deine DB-Klasse auf
-        const newUser = await userRepository.createUser(email);
+        const newUser = await userRepository.createUser(req.body);
         res.status(201).json(newUser);
     } catch (error) {
         console.error(error);

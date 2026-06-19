@@ -1,0 +1,32 @@
+### Neuen Benutzer anlegen
+POST http://localhost:3000/api/users
+Content-Type: application/json
+
+### Neuen Benutzer anlegen (vollständiges Schema)
+POST http://localhost:3000/api/users
+Content-Type: application/json
+
+{
+  "household_id": null,
+  "email": "testuser@wissar.de",
+  "password": "superSicheresPasswort123",
+  "first_name": "Max",
+  "last_name": "Mustermann",
+  "phone": "+4912345678",
+  "address": "Musterstraße 42",
+  "city": "Berlin",
+  "postal_code": "10115",
+  "role": "user",
+  "status": "active"
+}
+
+###
+
+### Alle Benutzer abfragen (zum Gegenprüfen)
+GET http://localhost:3000/api/rest/users
+Accept: application/json
+###
+
+### Alle Benutzer abfragen (für später, falls du getAllUsers testest)
+GET http://localhost:3000/api/rest/users
+Accept: application/json
