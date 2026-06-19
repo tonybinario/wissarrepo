@@ -1,4 +1,4 @@
-const db = require('../dbconnection');
+const db = require('../db/dbconnection');
 
 class UserRepository {
     constructor() {
