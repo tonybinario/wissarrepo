@@ -11,6 +11,18 @@ class HouseholdRepository {
         return res.rows;
     }
 
+    async getHouseholdById(id) {
+        const res = await this.pool.query('SELECT * FROM households WHERE id = $1', [id]);
+        return res.rows[0];
+    }
+
+    // Holt alle Haushalte, die zu einem bestimmten Gebäude gehören
+    async getHouseholdsByBuildingId(buildingId) {
+        const res = await this.pool.query('SELECT * FROM households WHERE building_id = $1', [buildingId]);
+        return res.rows;
+    }
+
+
     // Erstellt einen neuen Haushalt (Wichtig für dein 1:1 Experiment)
     async createHousehold(householdData) {
         const {

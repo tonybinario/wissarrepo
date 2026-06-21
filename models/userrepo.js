@@ -16,6 +16,16 @@ class UserRepository {
         return res.rows;
     }
 
+    // Holt einen einzelnen User anhand seiner ID
+    async getUserById(id) {
+        const res = await this.pool.query('SELECT * FROM users WHERE id = $1', [id]);
+        return res.rows[0]; // Gibt nur das eine gefundene Objekt zurück
+    }
+
+    async getUsersByHouseholdId(householdId) {
+        const res = await this.pool.query('SELECT * FROM users WHERE household_id = $1', [householdId]);
+        return res.rows[0] || null;    }
+
     async createUser(userData) {
         const {
             household_id, email, password, first_name,

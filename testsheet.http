@@ -1,24 +1,24 @@
-### Neuen Benutzer anlegen
-POST http://localhost:3000/api/users
-Content-Type: application/json
-
-### Neuen Benutzer anlegen (vollständiges Schema)
-POST http://localhost:3000/api/users
-Content-Type: application/json
-
-{
-  "household_id": null,
-  "email": "testuser@wissar.de",
-  "password": "superSicheresPasswort123",
-  "first_name": "Max",
-  "last_name": "Mustermann",
-  "phone": "+4912345678",
-  "address": "Musterstraße 42",
-  "city": "Berlin",
-  "postal_code": "10115",
-  "role": "user",
-  "status": "active"
-}
+#### Neuen Benutzer anlegen
+#POST http://localhost:3000/api/users
+#Content-Type: application/json
+#
+#### Neuen Benutzer anlegen (vollständiges Schema)
+#POST http://localhost:3000/api/users
+#Content-Type: application/json
+#
+#{
+#  "household_id": null,
+#  "email": "testuser@wissar.de",
+#  "password": "superSicheresPasswort123",
+#  "first_name": "Max",
+#  "last_name": "Mustermann",
+#  "phone": "+4912345678",
+#  "address": "Musterstraße 42",
+#  "city": "Berlin",
+#  "postal_code": "10115",
+#  "role": "user",
+#  "status": "active"
+#}
 
 ###
 
@@ -36,3 +36,107 @@ Accept: application/json
 ### 2. Alle Haushalte abfragen (Sollte 10.000 Einträge liefern)
 GET https://localhost:443/api/households
 Accept: application/json
+
+### ========================================================================
+### EXPERIMENT-SZENARIO 1: Overfetching
+### Ziel: Nachweis von unnötigem Daten-Payload im Netzwerk.
+### Erwartung: Der Client will nur E-Mails, kriegt aber alle Spalten (Passwörter, Telefon, etc.).
+### ========================================================================
+GET https://localhost:443/api/users
+Accept: application/json
+
+###
+
+
+### ========================================================================
+### EXPERIMENT-SZENARIO 2: Underfetching (Sequentielle Kette)
+### Ziel: Nachweis der Latenz-Summierung durch 3 separate HTTPS-Roundtrips.
+### Use-Case: Finde das Land (im Gebäude), in dem User mit ID 1 wohnt.
+### ========================================================================
+
+# Schritt A: Hole User Nr. 1 -> Liefert household_id (z.B. 1)
+GET https://localhost:443/api/users/1
+Accept: application/json
+
+###
+
+# Schritt B: Hole Haushalt Nr. 1 -> Liefert building_id (z.B. 1)
+GET https://localhost:443/api/households/1
+Accept: application/json
+
+###
+
+# Schritt C: Hole Gebäude Nr. 1 -> Liefert das finale Feld 'country'
+GET https://localhost:443/api/buildings/1
+Accept: application/json
+
+###
+
+
+### ========================================================================
+### EXPERIMENT-SZENARIO 3: Heavy Nested Fetch (Der optimierte REST-Weg)
+### Ziel: Messung der maximalen SQL-Join-Performance für das Admin-Dashboard.
+### Erwartung: Liefert alle 10.000 verschachtelten Zeilen in einem einzigen Request.
+### ========================================================================
+GET https://localhost:443/api/buildings
+Accept: application/json
+
+###
+
+
+### ========================================================================
+### ZUSÄTZLICHE BASIS-ROUTEN (Zur manuellen Kontrolle)
+### ========================================================================
+
+### Alle Gebäude abfragen
+GET https://localhost:443/api/buildings
+Accept: application/json
+
+###
+
+### Alle Haushalte flach abfragen
+GET https://localhost:443/api/households
+Accept: application/json
+
+
+### Test 1: Gebäude mit ihren Haushalten abfragen
+POST https://localhost:443/graphql
+Content-Type: application/json
+
+{
+  "query": "query TestBuildingToHouseholds { buildings { id address city households { id room_number floor } } }"
+}
+
+
+### Test 2: Haushalte mit ihrem jeweiligen User abfragen
+POST https://localhost:443/graphql
+Content-Type: application/json
+
+{
+  "query": "query TestHouseholdToUser { households { id room_number user { id email first_name } } }"
+}
+### GraphQL Szenario 2: Gezielte Einzelabfrage mit ID-Filter
+POST https://localhost:443/graphql
+Content-Type: application/json
+
+{
+  "query": "query { user(id: 1) { id first_name last_name phone } }"
+}
+
+
+### GraphQL Szenario 3: Massenabruf aller flachen Entitäten
+POST https://localhost:443/graphql
+Content-Type: application/json
+
+{
+  "query": "query { users { id email } households { id room_number } buildings { id address city } }"
+}
+
+
+### GraphQL: Verschachtelte Hierarchie abfragen (Buildings -> Households -> Users)
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "query GetCompleteHierarchy { buildings { id address city households { id room_number floor users { id email first_name } } } }"
+}

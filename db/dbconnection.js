@@ -16,8 +16,7 @@ class DatabaseConnection {
 
     // Führt alle SQL-Migrationsskripte aus
     async init() {
-        const migrationsDir = path.join(__dirname, 'db', 'migrations');
-        
+        const migrationsDir = path.join(process.cwd(), 'db', 'migrations');
         try {
             // Stelle sicher, dass das Migrationsverzeichnis existiert
             if (!fs.existsSync(migrationsDir)) {

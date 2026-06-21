@@ -13,6 +13,18 @@ router.get('/', async function (req, res, next) {
     }
 });
 
+// GET /api/users/:id (z.B. /api/users/42)
+router.get('/:id', async (req, res) => {
+    try {
+        const user = await userRepository.getUserById(req.params.id);
+        if (!user) return res.status(404).json({ error: "User nicht gefunden" });
+        res.json(user);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+
 /* 2. POST: Neuen User anlegen */
 router.post('/', async (req, res) => { // Hier stand vorher 'post', jetzt 'router.post'
     try {

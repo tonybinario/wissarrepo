@@ -4,12 +4,17 @@
   "private": true,
   "scripts": {
     "start": "node app.js",
-    "dev": "nodemon app.js"
+    "dev": "nodemon app.js",
+    "start:graphql": "node graphql/server.js",
+    "dev:graphql": "nodemon graphql/server.js"
   },
   "dependencies": {
+    "@apollo/server": "^5.5.1",
+    "@as-integrations/express4": "^1.1.2",
     "cookie-parser": "~1.4.4",
     "debug": "~2.6.9",
     "express": "~4.16.1",
+    "graphql-tag": "^2.12.7",
     "http-errors": "~1.6.3",
     "morgan": "~1.9.1",
     "pg": "^8.21.0",
