@@ -23,4 +23,17 @@ router.get('/:id', async (req, res) => {
     }
 });
 
+router.get('/hierarchy', async (req, res) => {
+    try {
+        // Rufe deine vorbereitete Repository-Methode auf
+        const data = await buildingRepository.getDeepNestedBuildings();
+
+        // Schicke die tief verschachtelten JSON-Daten an den Client zurück
+        res.json(data);
+    } catch (error) {
+        console.error("Fehler in GET /api/buildings/hierarchy:", error);
+        res.status(500).json({ error: 'Serverfehler beim Laden der Gebäude-Hierarchie' });
+    }
+});
+
 module.exports = router;

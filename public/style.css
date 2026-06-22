@@ -1,0 +1,41 @@
+body {
+  font-family: sans-serif;
+  margin: 15px;
+  background: #fafafa;
+}
+
+.test-section {
+  margin-bottom: 30px;
+  padding: 10px;
+  background: #fff;
+  border: 1px solid #ccc;
+}
+
+button {
+  width: 100%;
+  padding: 15px;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+button:disabled {
+  background: #ddd;
+}
+
+.results {
+  margin-top: 10px;
+  padding: 10px;
+  display: none;
+  font-family: monospace;
+  border-left: 5px solid #999;
+}
+
+.success {
+  background: #e6f4ea;
+  border-left-color: #137333;
+}
+
+.error {
+  background: #fce8e6;
+  border-left-color: #c5221f;
+}

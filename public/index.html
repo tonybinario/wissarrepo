@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Performance Benchmark - Volle Matrix</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h1>API Versuchsreihe</h1>
+
+<div class="info-box">
+    <h3>Systembeschreibung</h3>
+    <p>Dieses Testbed führt exakt die definierten Abfragen deiner Arbeit aus. Beim REST-Massenabruf werden die Anfragen parallel geschossen, um den GraphQL-Vorteil fair zu vergleichen.</p>
+</div>
+
+<div class="config-section">
+    <label for="testCase">Wähle den konkreten Testfall:</label>
+    <select id="testCase">
+        <option value="test1">Test 1: Gebäude mit ihren Haushalten</option>
+        <option value="test2">Test 2: Haushalte mit ihrem jeweiligen User</option>
+        <option value="scenario2">Szenario 2: Gezielte Einzelabfrage (User ID: 1)</option>
+        <option value="scenario3">Szenario 3: Massenabruf aller flachen Entitäten</option>
+        <option value="hierarchy">Szenario 4: Verschachtelte Hierarchie (Kompletter Baum)</option>
+    </select>
+</div>
+
+<div class="test-section">
+    <h2>1. REST API Testbed</h2>
+    <button id="btnRest">REST Abfrage starten</button>
+    <div id="resRest" class="results"></div>
+</div>
+
+<div class="test-section">
+    <h2>2. GraphQL Testbed</h2>
+    <button id="btnGql">GraphQL Abfrage starten</button>
+    <div id="resGql" class="results"></div>
+</div>
+
+<script>
+    // DEINE exakten GraphQL Queries aus der .http Datei
+    const GQL_QUERIES = {
+        test1: { query: "query TestBuildingToHouseholds { buildings { id address city households { id room_number floor } } }" },
+        test2: { query: "query TestHouseholdToUser { households { id room_number user { id email first_name } } }" },
+        scenario2: { query: "query { user(id: 1) { id first_name last_name phone } }" },
+        scenario3: { query: "query { users { id email } households { id room_number } buildings { id address city } }" },
+        hierarchy: { query: "query GetCompleteHierarchy { buildings { id address city households { id room_number floor user { id email first_name } } } }" }
+    };
+
+    function displayResult(elementId, isSuccess, duration, payloadSize, extraInfo = "") {
+        const el = document.getElementById(elementId);
+        el.style.display = "block";
+        if (isSuccess) {
+            el.className = "results success";
+            el.innerHTML = `<strong>Status:</strong> 200 OK\n<strong>Dauer:</strong> ${duration.toFixed(2)} ms\n<strong>Payload:</strong> ${payloadSize} KB\n<span>${extraInfo}</span>`;
+        } else {
+            el.className = "results error";
+            el.innerHTML = `<strong>Fehler:</strong> ${extraInfo}`;
+        }
+    }
+
+    // --- REST LOGIK ---
+    document.getElementById('btnRest').addEventListener('click', async () => {
+        const btn = document.getElementById('btnRest');
+        const resEl = document.getElementById('resRest');
+        const activeCase = document.getElementById('testCase').value;
+
+        btn.disabled = true;
+        resEl.style.display = "block";
+        resEl.innerText = "Lade REST-Daten...";
+
+        const start = performance.now();
+        try {
+            let rawText = "";
+            let info = "";
+
+            if (activeCase === 'test1') {
+                const res = await fetch('/api/buildings'); // Holt Gebäude (ggf. mit Haushalten je nach deinem Router)
+                rawText = await res.text();
+                info = "Abfrage auf /api/buildings";
+            }
+            else if (activeCase === 'test2') {
+                const res = await fetch('/api/households');
+                rawText = await res.text();
+                info = "Abfrage auf /api/households";
+            }
+            else if (activeCase === 'scenario2') {
+                const res = await fetch('/api/users/1'); // Gezielte ID Abfrage
+                rawText = await res.text();
+                info = "Abfrage auf /api/users/1";
+            }
+            else if (activeCase === 'scenario3') {
+                // Das spannende Szenario: REST muss 3x feuern!
+                const [r1, r2, r3] = await Promise.all([
+                    fetch('/api/users'),
+                    fetch('/api/households'),
+                    fetch('/api/buildings')
+                ]);
+                const t1 = await r1.text();
+                const t2 = await r2.text();
+                const t3 = await r3.text();
+                rawText = t1 + t2 + t3; // Kombinierte Payload-Größe für die Statistik
+                info = "3 parallele Requests gefeuert (Multi-Endpoint-Problem)";
+            }
+            else if (activeCase === 'hierarchy') {
+                // HIER BITTE PRÜFEN: Wie heißt deine REST-Route, die den ganzen Baum liefert?
+                // Falls du sie im buildingsRouter z.B. als '/' oder '/all' definiert hast:
+                const res = await fetch('/api/buildings');
+                rawText = await res.text();
+                info = "Hierarchischer REST-Abruf";
+            }
+
+            const end = performance.now();
+            displayResult('resRest', true, end - start, (rawText.length / 1024).toFixed(2), info);
+
+        } catch (err) {
+            displayResult('resRest', false, 0, 0, err.message);
+        } finally {
+            btn.disabled = false;
+        }
+    });
+
+    // --- GRAPHQL LOGIK ---
+    document.getElementById('btnGql').addEventListener('click', async () => {
+        const btn = document.getElementById('btnGql');
+        const resEl = document.getElementById('resGql');
+        const activeCase = document.getElementById('testCase').value;
+
+        btn.disabled = true;
+        resEl.style.display = "block";
+        resEl.innerText = "Sende GraphQL-Query...";
+
+        const start = performance.now();
+        try {
+            const response = await fetch('/graphql', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(GQL_QUERIES[activeCase]) // Schickt exakt DEINE ausgewählte Query
+            });
+
+            if (!response.ok) throw new Error(`Status: ${response.status}`);
+
+            const rawText = await response.text();
+            const jsonResult = JSON.parse(rawText);
+            const end = performance.now();
+
+            if (jsonResult.errors) throw new Error(jsonResult.errors[0].message);
+
+            displayResult('resGql', true, end - start, (rawText.length / 1024).toFixed(2), `Erfolgreich über /graphql abgewickelt.`);
+        } catch (err) {
+            displayResult('resGql', false, 0, 0, err.message);
+        } finally {
+            btn.disabled = false;
+        }
+    });
+</script>
+
+</body>
+</html>
