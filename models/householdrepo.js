@@ -5,9 +5,22 @@ class HouseholdRepository {
         this.pool = db.getPool();
     }
 
-    // Holt alle Haushalte
-    async getAllHouseholds() {
+    async getAllHouseholdsFlat() {
         const res = await this.pool.query('SELECT * FROM households');
+        return res.rows;
+    }
+
+    async getAllHouseholds() {
+        const query = `
+        SELECT h.id, h.room_number,
+               json_build_object(
+                   'id', u.id,
+                   'email', u.email
+               ) AS user
+        FROM households h
+        LEFT JOIN users u ON u.household_id = h.id;
+    `;
+        const res = await this.pool.query(query);
         return res.rows;
     }
 

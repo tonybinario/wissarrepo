@@ -140,3 +140,13 @@ Content-Type: application/json
 {
   "query": "query GetCompleteHierarchy { buildings { id address city households { id room_number floor user { id email first_name } } } }"
 }
+
+
+###
+GET https://localhost:443/api/buildings?include=households
+Content-Type: application/json
+
+
+###
+GET https://localhost:443/api/households?include=user
+Content-Type: application/json

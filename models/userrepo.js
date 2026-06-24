@@ -18,8 +18,24 @@ class UserRepository {
 
     // Holt einen einzelnen User anhand seiner ID
     async getUserById(id) {
-        const res = await this.pool.query('SELECT * FROM users WHERE id = $1', [id]);
-        return res.rows[0]; // Gibt nur das eine gefundene Objekt zurück
+        const query = `
+            SELECT id AS user_id, email AS user_email
+            FROM users
+            WHERE id = $1
+        `;
+        const res = await this.pool.query(query, [id]);
+
+        // Fallback, falls die ID doch mal nicht existiert
+        if (res.rows.length === 0) {
+            return null;
+        }
+
+        // Wir bauen das Objekt EXPLIZIT für GraphQL zusammen:
+        // GraphQL sucht nach 'id' und 'email'
+        return {
+            id: res.rows[0].user_id,
+            email: res.rows[0].user_email
+        };
     }
 
     async getUsersByHouseholdId(householdId) {
@@ -30,14 +46,14 @@ class UserRepository {
         const {
             household_id, email, password, first_name,
             last_name, phone, address, city, postal_code,
-            role, status
+            role,
         } = userData;
 
         const query = `
             INSERT INTO users
             (household_id, email, password, first_name, last_name,
-             phone, address, city, postal_code, role, status)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *;
+             phone, address, city, postal_code, role)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *;
         `;
 
         const values = [
@@ -51,7 +67,6 @@ class UserRepository {
             city || null,
             postal_code || null,
             role || 'user',
-            status || 'active'
         ];
 
         const res = await this.pool.query(query, values);

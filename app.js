@@ -31,6 +31,7 @@ app.use('/api/users', usersRouter);
 app.use('/api/buildings', buildingsRouter);
 app.use('/api/households', householdsRouter);
 
+
 // 4. GraphQL Server initialisieren und starten
 async function startCombinedServer() {
     const server = new ApolloServer({
@@ -66,7 +67,7 @@ async function startCombinedServer() {
         const PORT = 443;
         https.createServer(httpsOptions, app).listen(PORT, () => {
             console.log(`Master-HTTPS-Server läuft stabil auf Port ${PORT}`);
-            console.log("Frontend-Oberfläche: https://slocalhost/");
+            console.log("Frontend-Oberfläche: https://localhost/");
             console.log(" GraphQL-Endpunkt: https://localhost/graphql");
         });
     } catch (error) {

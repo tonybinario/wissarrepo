@@ -8,20 +8,31 @@ const resolvers = {
         users: async () => await userRepository.getAllUsers(),
         households: async () => await householdRepository.getAllHouseholds(),
         buildings: async () => await buildingRepository.getAllBuildings(),
-        user: async (parent, args) => await userRepository.getUserById(args.id)
+
+        // REPARIERT FÜR SZENARIO 3: id in Integer umwandeln!
+        user: async (parent, args) => {
+            const userId = parseInt(args.id, 10);
+            return await userRepository.getUserById(userId);
+        }
     },
 
     Building: {
         households: async (parent) => {
-            // Ein Gebäude hat weiterhin mehrere Haushalte (Array)
-            return await householdRepository.getHouseholdsByBuildingId(parent.id);
+            // parent.id in Zahl umwandeln, falls es vom Treiber als String kommt
+            const buildingId = parseInt(parent.id, 10);
+            return await householdRepository.getHouseholdsByBuildingId(buildingId);
         }
     },
 
     Household: {
-        // ANGEPASST: Gibt jetzt ein einzelnes User-Objekt zurück
         user: async (parent) => {
-            return await userRepository.getUsersByHouseholdId(parent.id);
+            const householdId = parseInt(parent.id, 10);
+
+            // WICHTIG FÜR SZENARIO 2:
+            // Falls getUsersByHouseholdId ein ARRAY liefert, wir aber nur EIN Objekt
+            // für das GraphQL-Schema brauchen, nehmen wir das erste Element [0]
+            const result = await userRepository.getUsersByHouseholdId(householdId);
+            return Array.isArray(result) ? result[0] : result;
         }
     }
 };

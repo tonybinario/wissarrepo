@@ -5,7 +5,6 @@ CREATE TABLE IF NOT EXISTS buildings
     city        VARCHAR(100) NOT NULL,
     postal_code VARCHAR(10)  NOT NULL,
     country     VARCHAR(100) DEFAULT 'Germany',
-    status      VARCHAR(50)  DEFAULT 'active',
     created_at  TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -15,7 +14,6 @@ CREATE TABLE IF NOT EXISTS households
     building_id   INTEGER     NOT NULL REFERENCES buildings (id) ON DELETE CASCADE,
     room_number   VARCHAR(20) NOT NULL,
     floor         INTEGER,
-    max_residents INTEGER     DEFAULT 4,
     status        VARCHAR(50) DEFAULT 'active',
     created_at    TIMESTAMP   DEFAULT CURRENT_TIMESTAMP
 );
@@ -32,7 +30,6 @@ CREATE TABLE IF NOT EXISTS users
     city         VARCHAR(100),
     postal_code  VARCHAR(10),
     role         VARCHAR(50) DEFAULT 'user',
-    status       VARCHAR(50) DEFAULT 'active',
     created_at   TIMESTAMP   DEFAULT CURRENT_TIMESTAMP
 );
 --

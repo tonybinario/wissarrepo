@@ -12,12 +12,15 @@ router.get('/', async function (req, res, next) {
         res.status(500).json({error: 'Fehler beim Laden der User'});
     }
 });
-
-// GET /api/users/:id (z.B. /api/users/42)
+// GET /api/users/:id
 router.get('/:id', async (req, res) => {
     try {
         const user = await userRepository.getUserById(req.params.id);
-        if (!user) return res.status(404).json({ error: "User nicht gefunden" });
+
+        if (!user) {
+            return res.status(404).json({ error: "User nicht gefunden" });
+        }
+
         res.json(user);
     } catch (err) {
         res.status(500).json({ error: err.message });

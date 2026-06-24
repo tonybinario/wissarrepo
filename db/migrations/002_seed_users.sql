@@ -2,13 +2,12 @@
 TRUNCATE users, households, buildings RESTART IDENTITY CASCADE;
 
 -- 2. 100 Gebäude generieren (IDs 1 bis 100)
-INSERT INTO buildings (address, city, postal_code, country, status)
+INSERT INTO buildings (address, city, postal_code, country)
 SELECT
     'Campus Allee ' || g,
     CASE WHEN g % 2 = 0 THEN 'Berlin' ELSE 'Muenchen' END,
     CASE WHEN g % 2 = 0 THEN '10115' ELSE '80801' END,
-    'Germany',
-    'active'
+    'Germany'
 FROM generate_series(1, 100) AS g;
 
 -- 3. 10.000 HAUSHALTE GENERIEREN (100 pro Gebäude)
@@ -26,7 +25,7 @@ FROM generate_series(1, 10000) AS h;
 -- Hier koppeln wir die IDs jetzt absolut synchron: User 1 kriegt Haushalt 1, User 2 kriegt Haushalt 2...
 INSERT INTO users (
     household_id, email, password, first_name, last_name,
-    phone, address, city, postal_code, role, status
+    phone, address, city, postal_code, role
 )
 SELECT
     u, -- KRITISCH: 1:1 Kopplung! id des Users matched exakt mit der household_id
@@ -38,8 +37,7 @@ SELECT
     'Dynamic Address ' || u,
     CASE WHEN (((u - 1) / 100) + 1) % 2 = 0 THEN 'Berlin' ELSE 'München' END,
     CASE WHEN (((u - 1) / 100) + 1) % 2 = 0 THEN '10115' ELSE '80801' END,
-    'user',
-    'active'
+    'user'
 FROM generate_series(1, 10000) AS u;
 
 -- Sichern

@@ -12,7 +12,8 @@
 
 <div class="info-box">
     <h3>Systembeschreibung</h3>
-    <p>Dieses Testbed führt exakt die definierten Abfragen deiner Arbeit aus. Beim REST-Massenabruf werden die Anfragen parallel geschossen, um den GraphQL-Vorteil fair zu vergleichen.</p>
+    <p>Dieses Testbed führt exakt die definierten Abfragen deiner Arbeit aus. Beim REST-Massenabruf werden die Anfragen
+        parallel geschossen, um den GraphQL-Vorteil fair zu vergleichen.</p>
 </div>
 
 <div class="config-section">
@@ -22,10 +23,8 @@
         <option value="test2">Test 2: Haushalte mit ihrem jeweiligen User</option>
         <option value="scenario2">Szenario 2: Gezielte Einzelabfrage (User ID: 1)</option>
         <option value="scenario3">Szenario 3: Massenabruf aller flachen Entitäten</option>
-        <option value="hierarchy">Szenario 4: Verschachtelte Hierarchie (Kompletter Baum)</option>
     </select>
 </div>
-
 <div class="test-section">
     <h2>1. REST API Testbed</h2>
     <button id="btnRest">REST Abfrage starten</button>
@@ -37,15 +36,27 @@
     <button id="btnGql">GraphQL Abfrage starten</button>
     <div id="resGql" class="results"></div>
 </div>
-
 <script>
-    // DEINE exakten GraphQL Queries aus der .http Datei
+    // JETZT STRUKTURELL UND BENAMUNGSSEITIG EXAKT SYNCHRON ZUM DROPDOWN!
     const GQL_QUERIES = {
-        test1: { query: "query TestBuildingToHouseholds { buildings { id address city households { id room_number floor } } }" },
-        test2: { query: "query TestHouseholdToUser { households { id room_number user { id email first_name } } }" },
-        scenario2: { query: "query { user(id: 1) { id first_name last_name phone } }" },
-        scenario3: { query: "query { users { id email } households { id room_number } buildings { id address city } }" },
-        hierarchy: { query: "query GetCompleteHierarchy { buildings { id address city households { id room_number floor user { id email first_name } } } }" }
+        // Test 1: Gebäude -> Haushalte
+        test1: {
+            query: "query TestBuildingToHouseholds { buildings { id address city households { id room_number } } }"
+        },
+
+        // Test 2: Haushalte -> User (Hier knallte es vorhin, weil die Zuordnung falsch war!)
+        test2: {
+            query: "query TestHouseholdToUser { households { id room_number user { id email } } }"
+        },
+
+        // Szenario 2: Gezielte Einzelabfrage (User ID: 1)
+        scenario2: {
+            query: "query GetSingleUser { user(id: 1) { id email } }"
+        },
+
+        // Szenario 3: Massenabruf (Die 3 parallelen User-Requests)
+        scenario3: {
+            query: "query MassenabrufFlach { users { id email } households { id room_number } buildings { id address city } }"        }
     };
 
     function displayResult(elementId, isSuccess, duration, payloadSize, extraInfo = "") {
@@ -76,39 +87,31 @@
             let info = "";
 
             if (activeCase === 'test1') {
-                const res = await fetch('/api/buildings'); // Holt Gebäude (ggf. mit Haushalten je nach deinem Router)
+                const res = await fetch('/api/buildings');
                 rawText = await res.text();
-                info = "Abfrage auf /api/buildings";
+                info = "Test 1: Gebäude inkl. Households geladen";
             }
             else if (activeCase === 'test2') {
                 const res = await fetch('/api/households');
                 rawText = await res.text();
-                info = "Abfrage auf /api/households";
+                info = "Test 2: households inkl. User geladen";
             }
             else if (activeCase === 'scenario2') {
-                const res = await fetch('/api/users/1'); // Gezielte ID Abfrage
+                const res = await fetch('/api/users/1');
                 rawText = await res.text();
-                info = "Abfrage auf /api/users/1";
+                info = "Szenario 2: Einzelner User mit ID 1 geladen";
             }
             else if (activeCase === 'scenario3') {
-                // Das spannende Szenario: REST muss 3x feuern!
                 const [r1, r2, r3] = await Promise.all([
                     fetch('/api/users'),
-                    fetch('/api/households'),
-                    fetch('/api/buildings')
+                    fetch('/api/households/flat'), // Liefert flache Haushalte (ohne verschachtelte User)
+                    fetch('/api/buildings/flat')
                 ]);
                 const t1 = await r1.text();
                 const t2 = await r2.text();
                 const t3 = await r3.text();
-                rawText = t1 + t2 + t3; // Kombinierte Payload-Größe für die Statistik
-                info = "3 parallele Requests gefeuert (Multi-Endpoint-Problem)";
-            }
-            else if (activeCase === 'hierarchy') {
-                // HIER BITTE PRÜFEN: Wie heißt deine REST-Route, die den ganzen Baum liefert?
-                // Falls du sie im buildingsRouter z.B. als '/' oder '/all' definiert hast:
-                const res = await fetch('/api/buildings');
-                rawText = await res.text();
-                info = "Hierarchischer REST-Abruf";
+                rawText = t1 + t2 + t3;
+                info = "Szenario 3: 3 separate Requests (User 1, 2, 3) parallel gefeuert";
             }
 
             const end = performance.now();
@@ -136,7 +139,7 @@
             const response = await fetch('/graphql', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(GQL_QUERIES[activeCase]) // Schickt exakt DEINE ausgewählte Query
+                body: JSON.stringify(GQL_QUERIES[activeCase]) // Lädt exakt das Match aus dem Dropdown-Value!
             });
 
             if (!response.ok) throw new Error(`Status: ${response.status}`);
@@ -147,7 +150,7 @@
 
             if (jsonResult.errors) throw new Error(jsonResult.errors[0].message);
 
-            displayResult('resGql', true, end - start, (rawText.length / 1024).toFixed(2), `Erfolgreich über /graphql abgewickelt.`);
+            displayResult('resGql', true, end - start, (rawText.length / 1024).toFixed(2), `Erfolgreich über /graphql ausgeführt.`);
         } catch (err) {
             displayResult('resGql', false, 0, 0, err.message);
         } finally {
@@ -155,6 +158,5 @@
         }
     });
 </script>
-
 </body>
 </html>

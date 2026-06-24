@@ -5,10 +5,22 @@ const buildingRepository = require('../models/buildingrepo');
 // GET /api/buildings
 router.get('/', async (req, res) => {
     try {
-        const buildings = await buildingRepository.getAllBuildings();
+        // Prüfe, ob der Query-Parameter gesetzt ist
+        const includeHouseholds = req.query.include === 'households';
+
+        const buildings = await buildingRepository.getAllBuildings(includeHouseholds);
         res.json(buildings);
     } catch (err) {
         res.status(500).json({ error: err.message });
+    }
+});
+
+router.get('/flat', async (req, res) => {
+    try {
+        const buildings = await buildingRepository.getAllBuildingsFlat();
+        res.json(buildings);
+    } catch (err) {
+        res.status(500).send(err.message);
     }
 });
 

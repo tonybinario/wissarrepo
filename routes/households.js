@@ -3,13 +3,24 @@ const router = express.Router();
 const householdRepository = require('../models/householdrepo');
 
 // GET /api/households
+// GET /api/households
 router.get('/', async (req, res) => {
     try {
-        const households = await householdRepository.getAllHouseholds();
-        console.log("Daten aus dem Repo:", households);
+        const includeUser = req.query.include === 'user';
+        const households = await householdRepository.getAllHouseholds(includeUser);
         res.json(households);
     } catch (err) {
         res.status(500).json({ error: err.message });
+    }
+});
+
+
+router.get('/flat', async (req, res) => {
+    try {
+        const households = await householdRepository.getAllHouseholdsFlat();
+        res.json(households);
+    } catch (err) {
+        res.status(500).send(err.message);
     }
 });
 
