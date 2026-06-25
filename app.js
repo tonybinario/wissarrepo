@@ -16,10 +16,25 @@ const buildingsRouter = require('./routes/buildings');
 const householdsRouter = require('./routes/households');
 const userRepository = require('./models/userrepo');
 
+// Mess-Infrastruktur (REST vs. GraphQL)
+const metrics = require('./metrics/metrics');
+
+// Ressourcen-Metriken (CPU/RAM) im Prometheus-Format. prom-client erfasst u.a.
+// process_cpu_seconds_total (kumulative CPU-Sekunden) und
+// process_resident_memory_bytes (RSS). Erhebung erfolgt out-of-band per Pull:
+// ein externer Scraper liest periodisch GET /metrics (siehe tools/scrape_metrics.js).
+const promClient = require('prom-client');
+promClient.collectDefaultMetrics();
+
 const app = express();
 
 // 1. Globale Middlewares
 app.use(express.json());
+
+// 1b. Mess-Middleware: misst Server-/DB-Zeit pro Request und setzt den
+// Server-Timing-Header. Bewusst VOR den Routern und vor /graphql, damit der
+// AsyncLocalStorage-Kontext sowohl REST-Handler als auch Resolver umschließt.
+app.use(metrics.middleware);
 
 // 2. Frontend Statisch ausliefern (Wichtig für das Smartphone!)
 const publicPath = path.join(__dirname, 'public');
@@ -30,6 +45,14 @@ console.log("➔ Express sucht den public-Ordner in:", publicPath);
 app.use('/api/users', usersRouter);
 app.use('/api/buildings', buildingsRouter);
 app.use('/api/households', householdsRouter);
+
+// 3b. Prometheus-Exposition (read-only). Wird out-of-band gescrapt und liegt
+// NICHT im Request-Pfad der gemessenen Endpunkte (/api/*, /graphql), sodass die
+// Messung das System-under-test nicht verfälscht.
+app.get('/metrics', async (req, res) => {
+    res.set('Content-Type', promClient.register.contentType);
+    res.end(await promClient.register.metrics());
+});
 
 
 // 4. GraphQL Server initialisieren und starten
