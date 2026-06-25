@@ -1,6 +1,7 @@
 const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
+const metrics = require('../metrics/metrics');
 
 class DatabaseConnection {
     constructor() {
@@ -12,6 +13,21 @@ class DatabaseConnection {
             password: 'postgres',
             port: 5432,
         });
+
+        // Mess-Wrapper: jede Query, die innerhalb eines gemessenen Requests
+        // läuft, wird gezählt und ihre Dauer dem Request zugerechnet.
+        // Greift transparent für alle Repositories, da sie denselben Pool teilen.
+        const origQuery = this.pool.query.bind(this.pool);
+        this.pool.query = (...args) => {
+            const start = process.hrtime.bigint();
+            const result = origQuery(...args);
+            if (result && typeof result.then === 'function') {
+                return result.finally(() => {
+                    metrics.recordDbQuery(process.hrtime.bigint() - start);
+                });
+            }
+            return result; // Callback-Form (hier nicht genutzt): nicht gemessen
+        };
     }
 
     // Führt alle SQL-Migrationsskripte aus

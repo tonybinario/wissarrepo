@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS households
     building_id   INTEGER     NOT NULL REFERENCES buildings (id) ON DELETE CASCADE,
     room_number   VARCHAR(20) NOT NULL,
     floor         INTEGER,
+    max_residents INTEGER     DEFAULT 1,
     status        VARCHAR(50) DEFAULT 'active',
     created_at    TIMESTAMP   DEFAULT CURRENT_TIMESTAMP
 );
