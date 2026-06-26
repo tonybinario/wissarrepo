@@ -18,29 +18,27 @@ class UserRepository {
 
     // Holt einen einzelnen User anhand seiner ID
     async getUserById(id) {
-        const query = `
-            SELECT id AS user_id, email AS user_email
-            FROM users
-            WHERE id = $1
-        `;
+        const query = 'SELECT id, household_id, email, first_name, last_name, phone, address, city, postal_code, role, status FROM users WHERE id = $1';
         const res = await this.pool.query(query, [id]);
 
-        // Fallback, falls die ID doch mal nicht existiert
         if (res.rows.length === 0) {
             return null;
         }
 
-        // Wir bauen das Objekt EXPLIZIT für GraphQL zusammen:
-        // GraphQL sucht nach 'id' und 'email'
-        return {
-            id: res.rows[0].user_id,
-            email: res.rows[0].user_email
-        };
+        // KORREKTUR: Einfach die ganze Zeile zurückgeben!
+        // Da sind dann id, email, first_name, last_name etc. alle fix und fertig drin.
+        return res.rows[0];
     }
 
     async getUsersByHouseholdId(householdId) {
-        const res = await this.pool.query('SELECT * FROM users WHERE household_id = $1', [householdId]);
-        return res.rows[0] || null;    }
+        const res = await this.pool.query('SELECT id, household_id, email, first_name, last_name, phone, address, city, postal_code, role, status FROM users WHERE household_id = $1', [householdId]);
+
+        if (res.rows.length === 0) {
+            return null;
+        }
+
+        return res.rows[0];
+    }
 
     async createUser(userData) {
         const {

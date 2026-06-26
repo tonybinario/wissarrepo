@@ -120,7 +120,7 @@ POST https://localhost:443/graphql
 Content-Type: application/json
 
 {
-  "query": "query { user(id: 1) { id first_name last_name phone } }"
+  "query": "query GetSingleUser { user(id: 1) { id email } }"
 }
 
 

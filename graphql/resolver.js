@@ -12,7 +12,14 @@ const resolvers = {
         // REPARIERT FÜR SZENARIO 3: id in Integer umwandeln!
         user: async (parent, args) => {
             const userId = parseInt(args.id, 10);
-            return await userRepository.getUserById(userId);
+            const userFromDb = await userRepository.getUserById(userId);
+
+            // Diese drei Zeilen loggen die echten Daten im Server-Terminal:
+            console.log("=== REALE DATEN AUS USER-REPOSITORY ===");
+            console.log(userFromDb);
+            console.log("========================================");
+
+            return userFromDb;
         }
     },
 
