@@ -18,6 +18,7 @@ class UserRepository {
 
     // Holt einen einzelnen User anhand seiner ID
     async getUserById(id) {
+        console.log("enter");
         const query = 'SELECT id, household_id, email, first_name, last_name, phone, address, city, postal_code, role, status FROM users WHERE id = $1';
         const res = await this.pool.query(query, [id]);
 

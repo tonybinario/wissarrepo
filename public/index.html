@@ -96,7 +96,7 @@
                 rawText = await res.text();
                 info = "Test Szenario  2: households inkl. User geladen";
             }
-            else if (activeCase === '3') {
+            else if (activeCase === 'scenario2') {
                 const res = await fetch('/api/users/1');
                 rawText = await res.text();
                 info = "Test Szenario 3: Einzelner User mit ID 1 geladen";
