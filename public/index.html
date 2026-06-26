@@ -89,17 +89,17 @@
             if (activeCase === 'test1') {
                 const res = await fetch('/api/buildings');
                 rawText = await res.text();
-                info = "Test 1: Gebäude inkl. Households geladen";
+                info = "Test Szenario 1: Gebäude inkl. Households geladen";
             }
             else if (activeCase === 'test2') {
                 const res = await fetch('/api/households');
                 rawText = await res.text();
-                info = "Test 2: households inkl. User geladen";
+                info = "Test Szenario  2: households inkl. User geladen";
             }
-            else if (activeCase === 'scenario2') {
+            else if (activeCase === '3') {
                 const res = await fetch('/api/users/1');
                 rawText = await res.text();
-                info = "Szenario 2: Einzelner User mit ID 1 geladen";
+                info = "Test Szenario 3: Einzelner User mit ID 1 geladen";
             }
             else if (activeCase === 'scenario3') {
                 const [r1, r2, r3] = await Promise.all([
@@ -111,7 +111,7 @@
                 const t2 = await r2.text();
                 const t3 = await r3.text();
                 rawText = t1 + t2 + t3;
-                info = "Szenario 3: 3 separate Requests (User 1, 2, 3) parallel gefeuert";
+                info = "Test Szenario 4: 3 separate Requests (User 1, 2, 3) parallel gefeuert";
             }
 
             const end = performance.now();
